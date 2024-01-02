@@ -158,6 +158,7 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
+    Android: com.DefaultCompany.PBR_Filament
     Standalone: com.DefaultCompany.PBR-Filament
   buildNumber:
     Standalone: 0

@@ -12,6 +12,11 @@
 /[Aa]ssets/Suntail Village/
 /.idea/
 
+#打包输出
+/out/
+#临时测试
+/[Aa]ssets/Test/
+
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !/[Aa]ssets/**/*.meta
 

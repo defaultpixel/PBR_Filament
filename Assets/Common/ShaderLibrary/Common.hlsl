@@ -5,10 +5,12 @@ inline half Pow2 (half x)
 {
     return x*x;
 }
-inline half Pow4 (half x)
+
+/*inline half Pow4 (half x)
 {
     return x*x * x*x;
-}
+}*/
+
 inline half Pow5 (half x)
 {
     return x*x * x*x * x;
@@ -48,6 +50,8 @@ float3 AOMultiBounce( float3 BaseColor, float AO )
     float3 c =  2.7552 * BaseColor + 0.6903;
     return max( AO, ( ( AO * a + b ) * AO + c ) * AO );
 }
+
+
 
 
 #endif

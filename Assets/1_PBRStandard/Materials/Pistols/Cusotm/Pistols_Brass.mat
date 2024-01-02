@@ -50,15 +50,20 @@ Material:
     m_Ints: []
     m_Floats:
     - _AOStrength: 1
+    - _DEBUG_0: 0
     - _DFGLUT_DEBUG: 0
     - _DFGLUT_OFF: 0
     - _DIFFUSE_OFF: 0
+    - _ECompen_DEBUG: 0
+    - _ECompen_OFF: 0
     - _IBL_OFF: 0
     - _Metallic: 1
     - _NormalScale: 1
     - _PerceptualRoughness: 1
+    - _SAMPLE_dfgLUT: 0
     - _SH_OFF: 0
     - _SPECULAR_OFF: 0
+    - _SPEC_LD_0: 0
     - _Specular: 0.5
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}

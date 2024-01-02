@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Pistols_misc
-  m_Shader: {fileID: 4800000, guid: 4859e252bc8f5054a9c13074c27df87c, type: 3}
+  m_Name: PBRClearCoat
+  m_Shader: {fileID: 4800000, guid: dc5a675e24b5bcd419c18f88c67f32a4, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -24,23 +24,23 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _AOMap:
-        m_Texture: {fileID: 2800000, guid: ee8519bcb72b25743ad8ce81319a9df6, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 9317b1d17752f864d8607b2d1240c474, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicMap:
-        m_Texture: {fileID: 2800000, guid: 07c293afc8bf0ba4a8c55a3905c40282, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 2800000, guid: 5991058f326b12347889a0ea0c761f40, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RoughnessMap:
-        m_Texture: {fileID: 2800000, guid: ca356a73f28ca60428d84022c5a9116b, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _dfgLUT:
@@ -50,21 +50,18 @@ Material:
     m_Ints: []
     m_Floats:
     - _AOStrength: 1
-    - _DEBUG_0: 0
+    - _ClearCoat: 1
+    - _ClearCoatPerceptualRoughness: 0.66
     - _DFGLUT_DEBUG: 0
     - _DFGLUT_OFF: 0
     - _DIFFUSE_OFF: 0
-    - _ECompen_DEBUG: 0
-    - _ECompen_OFF: 0
     - _IBL_OFF: 0
     - _Metallic: 1
     - _NormalScale: 1
-    - _PerceptualRoughness: 1
-    - _SAMPLE_dfgLUT: 0
+    - _PerceptualRoughness: 0.5
     - _SH_OFF: 0
     - _SPECULAR_OFF: 0
-    - _SPEC_LD_0: 0
     - _Specular: 0.5
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 1, g: 0.8509804, b: 0.5686275, a: 1}
   m_BuildTextureStacks: []

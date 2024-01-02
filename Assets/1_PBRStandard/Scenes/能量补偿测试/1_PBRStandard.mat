@@ -53,10 +53,13 @@ Material:
     - _DFGLUT_DEBUG: 0
     - _DFGLUT_OFF: 0
     - _DIFFUSE_OFF: 0
+    - _ECompen_DEBUG: 0
+    - _ECompen_OFF: 0
     - _IBL_OFF: 0
     - _Metallic: 1
     - _NormalScale: 1
     - _PerceptualRoughness: 1
+    - _SAMPLE_dfgLUT: 0
     - _SH_OFF: 0
     - _SPECULAR_OFF: 0
     - _Specular: 0.5
