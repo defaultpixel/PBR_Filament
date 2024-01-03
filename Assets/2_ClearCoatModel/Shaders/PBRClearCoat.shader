@@ -11,16 +11,16 @@ Shader "CustomPBR/PBRClearCoat"
         _RoughnessMap("Roughness Map",2D)                 = "white" {}
         _PerceptualRoughness("Roughness",Range(0.0,1.0))  = 1.0
          
-        _Specular ("Specular", Range(0.0, 2.0))           = 0.5
+        _Specular ("Specular", Range(0.0, 1.0))           = 0.5
                
         _NormalMap   ("Normal Map",2D)                    = "bump" {}
-        _NormalScale ("Normal",float)                     = 1.0
+        _NormalScale ("Normal", Range(0.0, 1.0))          = 1.0
        
         _AOMap       ("AOMap",2D)                         = "white" {}
         _AOStrength  ("AOStrength",Range(0.0,1.0))        = 1.0
         
-        _ClearCoat   ("ClearCoat", Range(0.0, 1.0))       = 0.0             // 清漆层强度
-        _ClearCoatPerceptualRoughness ("ClearCoatRoughness", Range(0.0, 1.0)) = 0.0
+        _ClearCoat   ("ClearCoat", Range(0.0, 1.0))       = 1.0
+        _ClearCoatRoughness ("ClearCoatRoughness", Range(0.0,1.0)) = 1.0
         
         // Test, linear,clamp
         _dfgLUT      ("dfg LUT", 2D)                      = "white" {}
@@ -30,8 +30,10 @@ Shader "CustomPBR/PBRClearCoat"
         [Toggle(_SH_OFF)]       _SH_OFF      ("SH OFF",       Float) = 0.0
         [Toggle(_IBL_OFF)]      _IBL_OFF     ("IBL OFF",      Float) = 0.0
         
-        [Toggle(_DFGLUT_OFF)]   _DFGLUT_OFF       ("_DFGLUT_OFF",    Float) = 0.0
-        [Toggle(_DFGLUT_DEBUG)] _DFGLUT_DEBUG     ("_DFGLUT_DEBUG",  Float) = 0.0
+        [Toggle(_ECompen_OFF)]   _ECompen_OFF       ("_ECompen_OFF",    Float) = 0.0
+        [Toggle(_ECompen_DEBUG)] _ECompen_DEBUG     ("_ECompen_DEBUG",  Float) = 0.0
+        
+        [Toggle(_SAMPLE_dfgLUT)] _SAMPLE_dfgLUT     ("_SAMPLE_dfgLUT",  Float) = 0.0
     }
     
     SubShader
@@ -66,9 +68,11 @@ Shader "CustomPBR/PBRClearCoat"
             #pragma shader_feature_local_fragment _SPECULAR_OFF
             #pragma shader_feature_local_fragment _SH_OFF
             #pragma shader_feature_local_fragment _IBL_OFF
-            #pragma shader_feature_local_fragment _DFGLUT_DEBUG
-            #pragma shader_feature_local_fragment _DFGLUT_OFF
-
+            #pragma shader_feature_local_fragment _ECompen_DEBUG
+            #pragma shader_feature_local_fragment _ECompen_OFF
+            
+            #pragma shader_feature_local_fragment _SAMPLE_dfgLUT
+            
             // -------------------------------------
             // Universal Pipeline keywords
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
@@ -92,7 +96,7 @@ Shader "CustomPBR/PBRClearCoat"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             // PBR光照计算
-            #include "PBRLighting_ClearCoat.hlsl"
+            #include "PBRClearCoat.hlsl"
 
             TEXTURE2D(_BaseMap);         SAMPLER(sampler_BaseMap);
             TEXTURE2D(_MetallicMap);     SAMPLER(sampler_MetallicMap);
@@ -110,7 +114,7 @@ Shader "CustomPBR/PBRClearCoat"
                 half  _AOStrength;
 
                 half  _ClearCoat;
-                half  _ClearCoatPerceptualRoughness;
+                half  _ClearCoatRoughness;
             CBUFFER_END
 
             struct Attributes
@@ -126,8 +130,8 @@ Shader "CustomPBR/PBRClearCoat"
             {
                 float2 uv           : TEXCOORD0;
                 float3 positionWS   : TEXCOORD1;
-                half3  normalWS     : TEXCOORD2;
-                half4  tangentWS    : TEXCOORD3;    // xyz: tangent, w: sign
+                float3 normalWS     : TEXCOORD2;
+                float4 tangentWS    : TEXCOORD3;    // xyz: tangent, w: sign
                 float4 shadowCoord  : TEXCOORD4;
                 float4 positionCS   : SV_POSITION;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -167,7 +171,7 @@ Shader "CustomPBR/PBRClearCoat"
                 
                 half3  view_dir   = GetWorldSpaceNormalizeViewDir(positionWS);
                 half3  normalWS   = normalize(input.normalWS);
-                half3  normalWS_mesh = normalWS;
+                half3  normalWS_mesh = normalWS; // 物体形状几何法线
                 half3  tangentWS  = normalize(input.tangentWS.xyz);
                 half3  binormalWS = normalize(cross(normalWS, tangentWS) * input.tangentWS.w);
 
@@ -183,7 +187,8 @@ Shader "CustomPBR/PBRClearCoat"
 
                 float metallic  = saturate(SAMPLE_TEXTURE2D(_MetallicMap, sampler_MetallicMap, uv).r * _Metallic);
                 float perceptualRoughness =
-                    max(SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, uv).r * _PerceptualRoughness, 0.089); // float:0.045
+                    SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, uv).r * _PerceptualRoughness;
+                perceptualRoughness = Remap01To(perceptualRoughness,  0.089, 1);
                 
                 half3 normalTS  = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv), _NormalScale);
                 normalWS = normalize(mul(normalTS, TBN));
@@ -191,18 +196,25 @@ Shader "CustomPBR/PBRClearCoat"
                 half ao = SAMPLE_TEXTURE2D(_AOMap, sampler_AOMap, uv).r;
                 ao = lerp(1.0, ao, _AOStrength);
 
-                // 让材质在高粗糙度时候的表现更线性,参考寒霜,r = a2 = pow4(linearRoughness)
-                float roughness = Pow4(perceptualRoughness);
+                // 让材质在高粗糙度时候的表现更线性
+                // a  = perceptualRoughness * perceptualRoughness;
+                // a2 = Pow4(perceptualRoughness);
+                half a  = perceptualRoughness * perceptualRoughness;
+                half roughness = a;
 
-                // clearCoat粗糙度
-                float clearCoatPerceptualRoughness = clamp(_ClearCoatPerceptualRoughness, 0.089, 1.0); // 0.045
-                float clearCoatRoughness = Pow4(clearCoatPerceptualRoughness);
-                float clearCoat = _ClearCoat;
+                // float roughness = Pow2(perceptualRoughness); // Filament
 
-                float3 F0 = float3(0.08,0.08,0.08) * _Specular;
+                half clearCoat = _ClearCoat; // clear coat strength
+                half clearCoatRoughnessPerceptual = Remap01To(_ClearCoatRoughness, 0.089, 0.6);
+                half clearCoatRoughness = clearCoatRoughnessPerceptual * clearCoatRoughnessPerceptual;
 
-                float3 diffuseColor  = lerp(baseColor, float3(0.0, 0.0, 0.0), metallic);
-                float3 F0_specularColor = lerp(F0, baseColor, metallic);
+                half3 F0 = float3(0.08,0.08,0.08) * _Specular;
+
+                half3 diffuseColor  = lerp(baseColor, float3(0.0, 0.0, 0.0), metallic);
+                half3 F0_specularColor = lerp(F0, baseColor, metallic);
+
+                F0_specularColor = F0BaseClearCoat(F0_specularColor); // 基层需要基于透明涂层-材质界面来重新计算 f0
+                // TODO : 根据透明图层的IOR来修改基层的perceptualRoughness
 
                 #if defined(_SCREEN_SPACE_OCCLUSION)
                     AmbientOcclusionFactor aoFactor = GetScreenSpaceAmbientOcclusion(screen_uv);
@@ -210,28 +222,29 @@ Shader "CustomPBR/PBRClearCoat"
                 #endif
 
                 // Test
-                float  dfg_NdotV = saturate(dot(normalWS, view_dir));
-                float2 dfg = SAMPLE_TEXTURE2D_LOD(_dfgLUT,sampler_dfgLUT,float2(dfg_NdotV, perceptualRoughness),0.0).rg;
-                float eneryCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
+                half2 dfg = 0.0;
+                half  eneryCompensation = 1.0;
 
-                #if defined (_DFGLUT_DEBUG) // debug
-                    return half4((eneryCompensation - 1.0).xxx, 1.0);
+                #if defined(_SAMPLE_dfgLUT)
+                half  dfg_NdotV = saturate(dot(normalWS, view_dir));
+                dfg = SAMPLE_TEXTURE2D_LOD(_dfgLUT,sampler_dfgLUT,float2(dfg_NdotV, perceptualRoughness),0.0).rg;
+                eneryCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
                 #endif
-
-                #if defined (_DFGLUT_OFF)  // debug
-                    eneryCompensation = 1.0;
-                #endif
-
-                // 光照计算:直接光
-                real3 DirectLigthing = CalDirectLighting(diffuseColor, F0_specularColor, roughness, positionWS, normalWS,
-                    view_dir, eneryCompensation, clearCoat, clearCoatRoughness, normalWS_mesh);
 
                 // 光照计算:环境光
-                real3 IndirectLighting = CalIndirectLighting(diffuseColor, F0_specularColor, perceptualRoughness, positionWS,
-                    normalWS, view_dir, ao, eneryCompensation, clearCoat, clearCoatRoughness, normalWS_mesh);
+                half3 IndirectLighting = CalIndirectLighting(diffuseColor, F0_specularColor, perceptualRoughness, positionWS,
+                    normalWS, view_dir, ao, eneryCompensation, dfg);
+                
+                // 光照计算:直接光
+                half3 DirectLigthing = CalDirectLighting(diffuseColor, F0_specularColor, roughness, positionWS, normalWS,
+                    normalWS_mesh, view_dir, eneryCompensation, clearCoat, clearCoatRoughness);
 
 
-                real3 finalColor = DirectLigthing + IndirectLighting;
+                half3 finalColor = DirectLigthing + IndirectLighting;
+
+                #if defined (_ECompen_DEBUG) // debug
+                    return half4((eneryCompensation - 1.0).xxx, 1.0);
+                #endif
                 
                 return half4(finalColor, 1.0);
             }
@@ -276,6 +289,7 @@ Shader "CustomPBR/PBRClearCoat"
 
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
+            
             ENDHLSL
         }
         

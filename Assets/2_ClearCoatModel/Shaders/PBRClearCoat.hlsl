@@ -3,17 +3,42 @@
 
 #include "Assets/Common/ShaderLibrary/BRDF.hlsl"
 
+half3 ClearCoatFrc(
+    half clearCoat,
+    half clearCoatRoughness,
+    half3 N_mesh,
+    half3 L,
+    half3 V,
+    inout half Fc
+    )
+{
+    half3 H = normalize(L + V); //TODO: safenormalize?
+
+    half NoH = saturate(dot(N_mesh, H));
+    half LoH = saturate(dot(L, H));
+    
+    half  Dc = D_GGX_Filament(clearCoatRoughness, NoH, N_mesh, H);
+    float Vc = V_Kelemen_Filament(LoH);
+    Fc = F_Schlick_Filament(LoH, 0.04h) * clearCoat;
+
+    half Frc = (Dc * Vc) * Fc;
+
+    return Frc;
+}
 
 half3 CustomBRDF(
     half3 diffuseColor,
     half3 F0_specularColor,
     half  roughness,
     half3 N,
+    half3 N_mesh,
     half3 V,
     half3 L,
     half3 lightColor,
     half  shadow,
-    half  enegyCompensation
+    half  enegyCompensation,
+    half  clearCoat,
+    half  clearCoatRoughness
 )
 {
     half3 H = normalize(L + V);
@@ -36,14 +61,15 @@ half3 CustomBRDF(
     // Specular
 
     // UE
-    half   D   = D_GGX_UE4(roughness, NoH);
-    float  Vis = Vis_SmithJointApprox(roughness, NoV, NoL);
-    half3  F   = F_Schlick_UE4(F0_specularColor, VoH);
+    /*half a2 = roughness * roughness; // Pow4(perceptualRoughness)
+    half   D   = D_GGX_UE4(a2, NoH);
+    float  Vis = Vis_SmithJointApprox(a2, NoV, NoL);
+    half3  F   = F_Schlick_UE4(F0_specularColor, VoH);*/
 
     // Filament
-    /*half D = D_GGX(roughness, NoH, N, H);
-    float Vis = V_SmithGGXCorrelated(NoV, NoL, roughness);
-    half3 F = F_Schlick(VoH, F0_specularColor);*/
+    half  D = D_GGX_Filament(roughness, NoH, N, H);
+    float Vis = V_SmithGGXCorrelatedFast(NoV, NoL, roughness);
+    half3 F = F_Schlick(VoH, F0_specularColor);
 
     half3 Fr = (D * Vis) * F;
     
@@ -53,16 +79,23 @@ half3 CustomBRDF(
         Fr *= enegyCompensation;
     #endif
 
+    // 清漆BRDF
+    half Fc = 1.0h; // 清漆BRDF F项,基层能量损失
+    half Frc = ClearCoatFrc(clearCoat, clearCoatRoughness, N_mesh, L, V, Fc);
+    
     #if defined(_SPECULAR_OFF) //debug
         Fr = half3(0,0,0);
     #endif
     
+    
     // test
     // return F * Radiance;
-    
 
-    // 直接光 Diffuse + Specular
-    return (Fd + Fr) * Radiance;
+
+    // 考虑清漆带来的基层能量损失
+    half3 DirectLighting = Radiance * ((Fd + Fr * (1.0 - Fc)) * (1.0 - Fc) + Frc);
+
+    return DirectLighting;
 }
 
 
@@ -72,8 +105,11 @@ half3 CalDirectLighting(
     half  roughness,
     half3 positionWS,
     half3 N,
+    half3 N_mesh,
     half3 V,
-    half  enegyCompensation
+    half  enegyCompensation,
+    half  clearCoat,
+    half  clearCoatRoughness
 )
 {
     #if defined(_MAIN_LIGHT_SHADOWS_SCREEN) && !defined(_SURFACE_TYPE_TRANSPARENT)
@@ -95,7 +131,8 @@ half3 CalDirectLighting(
 
         DirectLighting_MainLight =
             CustomBRDF(
-                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,enegyCompensation);
+                diffuseColor,F0_specularColor,roughness,N,N_mesh,V,L,lightColor,shadow,enegyCompensation,
+                clearCoat, clearCoatRoughness);
     }
 
     // AddLights
@@ -113,7 +150,8 @@ half3 CalDirectLighting(
 
         DirectLighting_AddLight +=
             CustomBRDF(
-                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,enegyCompensation);
+                diffuseColor,F0_specularColor,roughness,N,N_mesh,V,L,lightColor,shadow,enegyCompensation,
+                clearCoat, clearCoatRoughness);
     }
     
     #endif
@@ -166,6 +204,7 @@ half3 CalIndirectLighting(
 
     // 能量补偿
     #if defined(_ECompen_OFF)
+        enegyCompensation = 1.0h;
     #else
         IndirectSpec *= enegyCompensation;
     #endif

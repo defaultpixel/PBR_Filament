@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: PBRClearCoat
-  m_Shader: {fileID: 4800000, guid: dc5a675e24b5bcd419c18f88c67f32a4, type: 3}
+  m_Shader: {fileID: 4800000, guid: 73aba476152900447accf21c627bf9eb, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -44,24 +44,25 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _dfgLUT:
-        m_Texture: {fileID: 2800000, guid: 669018f7b7ae0d742926c89aff1a001d, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _AOStrength: 1
     - _ClearCoat: 1
-    - _ClearCoatPerceptualRoughness: 0.66
-    - _DFGLUT_DEBUG: 0
-    - _DFGLUT_OFF: 0
+    - _ClearCoatRoughness: 1
     - _DIFFUSE_OFF: 0
+    - _ECompen_DEBUG: 0
+    - _ECompen_OFF: 0
     - _IBL_OFF: 0
     - _Metallic: 1
     - _NormalScale: 1
-    - _PerceptualRoughness: 0.5
+    - _PerceptualRoughness: 0
+    - _SAMPLE_dfgLUT: 0
     - _SH_OFF: 0
     - _SPECULAR_OFF: 0
     - _Specular: 0.5
     m_Colors:
-    - _BaseColor: {r: 1, g: 0.8509804, b: 0.5686275, a: 1}
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

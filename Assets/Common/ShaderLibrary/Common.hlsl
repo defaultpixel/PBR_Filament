@@ -16,6 +16,16 @@ inline half Pow5 (half x)
     return x*x * x*x * x;
 }
 
+half Remap(half input, half oldMin, half oldMax, half newMin, half newMax)
+{
+    return ((newMin + (input - oldMin) * (newMax - newMin) / (oldMax - oldMin)));
+}
+
+half Remap01To(half input, half newMin, half newMax)
+{
+    return Remap(input, 0, 1, newMin, newMax);
+}
+
 void GetSSAO_float(float2 screen_uv,out float SSAO)
 {
     SSAO = 1.0f;
@@ -51,6 +61,10 @@ float3 AOMultiBounce( float3 BaseColor, float AO )
     return max( AO, ( ( AO * a + b ) * AO + c ) * AO );
 }
 
+float3 F0BaseClearCoat(float3 F0)
+{
+    return Pow2(1 - 5 * sqrt(F0))/ Pow2(5 - sqrt(F0));
+}
 
 
 

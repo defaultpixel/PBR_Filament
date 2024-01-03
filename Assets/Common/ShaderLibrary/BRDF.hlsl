@@ -94,12 +94,13 @@ half3 EnvBRDFApprox( half3 SpecularColor, half Roughness, half NoV, out half2 en
 
 
 // ----- Filament -----
+// roughness = a = perceptualRoughness * perceptualRoughness
 
 
 #define MEDIUMP_FLT_MAX    65504.0
 #define saturateMediump(x) min(x, MEDIUMP_FLT_MAX)
 
-float D_GGX(float roughness, float NoH, const float3 n, const float3 h)
+float D_GGX_Filament(float roughness, float NoH, const float3 n, const float3 h)
 {
     float3 NxH = cross(n, h);
     float a = NoH * roughness;
@@ -129,7 +130,7 @@ float V_Kelemen_Filament(float LoH)
     return 0.25f / max(Pow2(LoH), 0.00001f);
 }
 
-float3 F_Schlick(float u, float3 f0)
+float3 F_Schlick_Filament(float u, float3 f0)
 {
     float f = pow(1.0 - u, 5.0);
     return f + f0 * (1.0 - f);
@@ -137,7 +138,7 @@ float3 F_Schlick(float u, float3 f0)
 
 
 // --------------------
-// Test 测试
+// Custom
 
 // LD
 half3 IndirectSpecularLD(half3 reflectVector, float3 positionWS, float perceptualRoughness, float occlusion)
