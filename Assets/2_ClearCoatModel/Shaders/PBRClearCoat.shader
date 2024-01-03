@@ -205,8 +205,8 @@ Shader "CustomPBR/PBRClearCoat"
                 // float roughness = Pow2(perceptualRoughness); // Filament
 
                 half clearCoat = _ClearCoat; // clear coat strength
-                half clearCoatRoughnessPerceptual = Remap01To(_ClearCoatRoughness, 0.089, 0.6);
-                half clearCoatRoughness = clearCoatRoughnessPerceptual * clearCoatRoughnessPerceptual;
+                half clearCoatPerceptualRoughness = Remap01To(_ClearCoatRoughness, 0.089, 0.6);
+                half clearCoatRoughness = clearCoatPerceptualRoughness * clearCoatPerceptualRoughness;
 
                 half3 F0 = float3(0.08,0.08,0.08) * _Specular;
 
@@ -216,6 +216,7 @@ Shader "CustomPBR/PBRClearCoat"
                 F0_specularColor = F0BaseClearCoat(F0_specularColor); // 基层需要基于透明涂层-材质界面来重新计算 f0
                 // TODO : 根据透明图层的IOR来修改基层的perceptualRoughness
 
+                // SSAO
                 #if defined(_SCREEN_SPACE_OCCLUSION)
                     AmbientOcclusionFactor aoFactor = GetScreenSpaceAmbientOcclusion(screen_uv);
                     ao = min(ao, aoFactor.indirectAmbientOcclusion);
@@ -233,7 +234,7 @@ Shader "CustomPBR/PBRClearCoat"
 
                 // 光照计算:环境光
                 half3 IndirectLighting = CalIndirectLighting(diffuseColor, F0_specularColor, perceptualRoughness, positionWS,
-                    normalWS, view_dir, ao, eneryCompensation, dfg);
+                    normalWS, normalWS_mesh, view_dir, ao, eneryCompensation, dfg, clearCoat, clearCoatPerceptualRoughness);
                 
                 // 光照计算:直接光
                 half3 DirectLigthing = CalDirectLighting(diffuseColor, F0_specularColor, roughness, positionWS, normalWS,

@@ -36,7 +36,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: ef30b70a15ea07944b452d55d10037fc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RoughnessMap:
@@ -58,11 +58,11 @@ Material:
     - _IBL_OFF: 0
     - _Metallic: 1
     - _NormalScale: 1
-    - _PerceptualRoughness: 0
+    - _PerceptualRoughness: 0.09
     - _SAMPLE_dfgLUT: 0
     - _SH_OFF: 0
     - _SPECULAR_OFF: 0
     - _Specular: 0.5
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.929, g: 0.872, b: 0.759, a: 1}
   m_BuildTextureStacks: []

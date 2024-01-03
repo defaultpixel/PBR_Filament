@@ -134,18 +134,21 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
+    - _ECompen_DEBUG: 0
+    - _ECompen_OFF: 0
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _IBL_OFF: 1
-    - _Metallic: 0
+    - _Metallic: 1
     - _NormalScale: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _PerceptualRoughness: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _SAMPLE_dfgLUT: 0
     - _SH_OFF: 0
     - _SPECULAR_OFF: 1
     - _Smoothness: 0.5

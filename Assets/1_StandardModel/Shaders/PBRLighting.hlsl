@@ -36,14 +36,15 @@ half3 CustomBRDF(
     // Specular
 
     // UE
-    half   D   = D_GGX_UE4(roughness, NoH);
-    float  Vis = Vis_SmithJointApprox(roughness, NoV, NoL);
-    half3  F   = F_Schlick_UE4(F0_specularColor, VoH);
+    /*half   a2 = roughness * roughness;
+    half   D   = D_GGX_UE4(a2, NoH);
+    float  Vis = Vis_SmithJointApprox(a2, NoV, NoL);
+    half3  F   = F_Schlick_UE4(F0_specularColor, VoH);*/
 
     // Filament
-    /*half D = D_GGX(roughness, NoH, N, H);
+    half  D = D_GGX_Filament(roughness, NoH, N, H);
     float Vis = V_SmithGGXCorrelated(NoV, NoL, roughness);
-    half3 F = F_Schlick(VoH, F0_specularColor);*/
+    half3 F = F_Schlick_Filament(VoH, F0_specularColor);
 
     half3 Fr = (D * Vis) * F;
     

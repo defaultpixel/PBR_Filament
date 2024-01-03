@@ -92,47 +92,89 @@ half3 EnvBRDFApprox( half3 SpecularColor, half Roughness, half NoV, out half2 en
     return SpecularColor * AB.x + AB.y;
 }
 
+half3 EnvBRDFApprox( half3 SpecularColor, half Roughness, half NoV)
+{
+    // [ Lazarov 2013, "Getting More Physical in Call of Duty: Black Ops II" ]
+    // Adaptation to fit our G term.
+    const half4 c0 = { -1, -0.0275, -0.572, 0.022 };
+    const half4 c1 = { 1, 0.0425, 1.04, -0.04 };
+    half4 r = Roughness * c0 + c1;
+    half a004 = min( r.x * r.x, exp2( -9.28 * NoV ) ) * r.x + r.y;
+    half2 AB = half2( -1.04, 1.04 ) * a004 + r.zw;
+
+    // Anything less than 2% is physically impossible and is instead considered to be shadowing
+    // Note: this is needed for the 'specular' show flag to work, since it uses a SpecularColor of 0
+    AB.y *= saturate( 50.0 * SpecularColor.g );
+
+    return SpecularColor * AB.x + AB.y;
+}
+
 
 // ----- Filament -----
 // roughness = a = perceptualRoughness * perceptualRoughness
 
-
 #define MEDIUMP_FLT_MAX    65504.0
 #define saturateMediump(x) min(x, MEDIUMP_FLT_MAX)
 
-float D_GGX_Filament(float roughness, float NoH, const float3 n, const float3 h)
+half D_GGX_Filament(half roughness, half NoH, const half3 n, const half3 h)
 {
-    float3 NxH = cross(n, h);
-    float a = NoH * roughness;
-    float k = roughness / (dot(NxH, NxH) + a * a);
-    float d = k * k * (1.0 / PI);
+    half3 NxH = cross(n, h);
+    half a = NoH * roughness;
+    half k = roughness / (dot(NxH, NxH) + a * a);
+    half d = k * k * (1.0 / PI);
     return saturateMediump(d);
 }
 
-float V_SmithGGXCorrelated(float NoV, float NoL, float roughness)
+
+// float at = max(roughness * (1.0 + anisotropy), 0.001);
+// float ab = max(roughness * (1.0 - anisotropy), 0.001);
+
+half D_GGX_Anisotropic(half NoH, const half3 h,
+        const float3 t, const float3 b, half at, half ab) {
+    half ToH = dot(t, h);
+    half BoH = dot(b, h);
+    float a2 = at * ab;
+    float3 v = float3(ab * ToH, at * BoH, a2 * NoH);
+    half v2 = dot(v, v);
+    half w2 = a2 / v2;
+    return a2 * w2 * w2 * (1.0 / PI);
+}
+
+float V_SmithGGXCorrelated(half NoV, half NoL, half roughness)
 {
-    float a2 = roughness * roughness;
+    half a2 = roughness * roughness;
     float GGXV = NoL * sqrt(NoV * NoV * (1.0 - a2) + a2);
     float GGXL = NoV * sqrt(NoL * NoL * (1.0 - a2) + a2);
     return 0.5 / (GGXV + GGXL);
 }
 
-float V_SmithGGXCorrelatedFast(float NoV, float NoL, float roughness)
+float V_SmithGGXCorrelatedFast(half NoV, half NoL, half roughness)
 {
-    float a = roughness;
+    half a = roughness;
     float GGXV = NoL * (NoV * (1.0 - a) + a);
     float GGXL = NoV * (NoL * (1.0 - a) + a);
     return 0.5 / (GGXV + GGXL);
 }
 
-float V_Kelemen_Filament(float LoH)
+half V_Kelemen_Filament(half LoH)
 {
     return 0.25f / max(Pow2(LoH), 0.00001f);
 }
 
-float3 F_Schlick_Filament(float u, float3 f0)
+// float at = max(roughness * (1.0 + anisotropy), 0.001);
+// float ab = max(roughness * (1.0 - anisotropy), 0.001);
+
+half V_SmithGGXCorrelated_Anisotropic(half at, half ab, half ToV, half BoV,
+        half ToL, half BoL, half NoV, half NoL) {
+    half lambdaV = NoL * length(half3(at * ToV, ab * BoV, NoV));
+    half lambdaL = NoV * length(half3(at * ToL, ab * BoL, NoL));
+    half v = 0.5 / (lambdaV + lambdaL);
+    return saturateMediump(v);
+}
+
+half3 F_Schlick_Filament(half u, half3 f0)
 {
-    float f = pow(1.0 - u, 5.0);
+    half f = pow(1.0 - u, 5.0);
     return f + f0 * (1.0 - f);
 }
 

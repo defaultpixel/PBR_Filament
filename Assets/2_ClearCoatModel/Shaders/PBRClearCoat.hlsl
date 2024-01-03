@@ -3,6 +3,9 @@
 
 #include "Assets/Common/ShaderLibrary/BRDF.hlsl"
 
+// 直接光清漆层
+// 1. 如果清漆没有自己的法线贴图,使用模型几何法线 ?TODO:使用模型发现贴图效果更好
+// 2. V项替换为更节省的V_Kelemen
 half3 ClearCoatFrc(
     half clearCoat,
     half clearCoatRoughness,
@@ -24,6 +27,36 @@ half3 ClearCoatFrc(
     half Frc = (Dc * Vc) * Fc;
 
     return Frc;
+}
+
+// 间接光清漆层
+// 1. 和计算间接光主镜面光一样
+// 2. Fc 作为能量损失
+half3 ClearCoatDFG(
+    half3 F0_specularColor,
+    half clearCoat,
+    half clearCoatPerceptualRoughness,
+    half3 V,
+    half3 N_mesh,
+    half3 positionWS,
+    half ao,
+    inout half Fc)
+{
+    half3 R = reflect(-V, N_mesh);
+
+    half NoV = saturate(dot(N_mesh, V));
+
+    #if defined(_SAMPLE_dfgLUT)
+    half3  SpecDFG =  EnvBRDF(F0_specularColor, clearCoatPerceptualRoughness, NoV, dfg);   // dfg方案一:采样生成的dfgLUT
+    #else
+    half3  SpecDFG =  EnvBRDFApprox(F0_specularColor, clearCoatPerceptualRoughness, NoV);  // dfg方案二:拟合
+    #endif
+    
+    half3 SpecLD  = IndirectSpecularLD(R, positionWS, clearCoatPerceptualRoughness, ao);
+
+    Fc = F_Schlick_Filament(NoV, 0.04) * clearCoat;
+
+    return SpecLD * SpecDFG;
 }
 
 half3 CustomBRDF(
@@ -69,7 +102,7 @@ half3 CustomBRDF(
     // Filament
     half  D = D_GGX_Filament(roughness, NoH, N, H);
     float Vis = V_SmithGGXCorrelatedFast(NoV, NoL, roughness);
-    half3 F = F_Schlick(VoH, F0_specularColor);
+    half3 F = F_Schlick_Filament(VoH, F0_specularColor);
 
     half3 Fr = (D * Vis) * F;
     
@@ -81,7 +114,7 @@ half3 CustomBRDF(
 
     // 清漆BRDF
     half Fc = 1.0h; // 清漆BRDF F项,基层能量损失
-    half Frc = ClearCoatFrc(clearCoat, clearCoatRoughness, N_mesh, L, V, Fc);
+    half Frc = ClearCoatFrc(clearCoat, clearCoatRoughness, N, L, V, Fc);
     
     #if defined(_SPECULAR_OFF) //debug
         Fr = half3(0,0,0);
@@ -94,6 +127,7 @@ half3 CustomBRDF(
 
     // 考虑清漆带来的基层能量损失
     half3 DirectLighting = Radiance * ((Fd + Fr * (1.0 - Fc)) * (1.0 - Fc) + Frc);
+    // DirectLighting = Radiance * (Fd + Fr);
 
     return DirectLighting;
 }
@@ -127,7 +161,7 @@ half3 CalDirectLighting(
         Light mainLight  = GetMainLight(shadowCoord, positionWS, shadowMask);
         half3 L          = mainLight.direction;
         half3 lightColor = mainLight.color;
-        half  shadow     = mainLight.shadowAttenuation * mainLight.distanceAttenuation;
+        half  shadow     = mainLight.shadowAttenuation; // * aoFactor.directAmbientOcclusion;
 
         DirectLighting_MainLight =
             CustomBRDF(
@@ -146,7 +180,7 @@ half3 CalDirectLighting(
         Light addLight   = GetAdditionalLight(lightIndex, positionWS, shadowMask);
         half3 L          = addLight.direction;
         half3 lightColor = addLight.color;
-        half  shadow     = addLight.shadowAttenuation * addLight.distanceAttenuation;
+        half  shadow     = addLight.shadowAttenuation * addLight.distanceAttenuation; // * aoFactor.directAmbientOcclusion;
 
         DirectLighting_AddLight +=
             CustomBRDF(
@@ -168,10 +202,13 @@ half3 CalIndirectLighting(
     half  perceptualRoughness,
     half3 positionWS,
     half3 N,
+    half3 N_mesh,
     half3 V,
     half  ao,
     inout half enegyCompensation,
-    half2  dfg
+    half2  dfg,
+    half  clearCoat,
+    half  clearCoatPerceptualRoughness
 )
 {
     half NoV = abs(dot(N, V)) + 1e-5;
@@ -197,6 +234,7 @@ half3 CalIndirectLighting(
     #endif
     
     half3 SpecLD  = IndirectSpecularLD(R, positionWS, perceptualRoughness, ao);
+    
     half  SpecularOcclusion = GetSpecularOcclusion(NoV, Pow2(perceptualRoughness), ao);
     half3 SpecularAO        = AOMultiBounce(F0_specularColor, SpecularOcclusion);
 
@@ -212,6 +250,16 @@ half3 CalIndirectLighting(
     #if defined(_IBL_OFF) // debug
         IndirectSpec = half3(0.0, 0.0, 0.0);
     #endif
+
+    // 清漆高光波瓣计算
+    half Fc = 0.0h;
+    half3 IndirecSpec_clearCoat = ClearCoatDFG(F0_specularColor,clearCoat,clearCoatPerceptualRoughness,
+        V,N,positionWS,ao,Fc) * SpecularAO;
+
+    // 基础层衰减的能量
+    IndirectDiffuse *= (1.0 - Fc);
+    IndirectSpec    *= (1.0 - Fc) * (1.0 - Fc);
+    IndirectSpec    += IndirecSpec_clearCoat * Fc;
 
     float3 IndirectLighting = IndirectDiffuse + IndirectSpec;
 

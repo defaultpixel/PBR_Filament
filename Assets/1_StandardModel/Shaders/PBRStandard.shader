@@ -191,7 +191,7 @@ Shader "CustomPBR/PBRStandard"
                 // 让材质在高粗糙度时候的表现更线性
                 // a  = perceptualRoughness * perceptualRoughness;
                 // a2 = Pow4(perceptualRoughness);
-                half roughness = Pow4(perceptualRoughness);
+                half roughness = perceptualRoughness * perceptualRoughness;;
 
                 // float roughness = Pow2(perceptualRoughness); // Filament
 
