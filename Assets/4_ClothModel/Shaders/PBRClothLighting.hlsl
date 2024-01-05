@@ -155,16 +155,25 @@ half3 CalIndirectLighting(
     half3 V,
     half  ao,
     inout half enegyCompensation,
-    half2  dfg
+    half2 dfg,
+    half  dg_cloth,
+    half3 subsurfaceColor
 )
 {
     half NoV = abs(dot(N, V)) + 1e-5;
     
-    // SH
+    // Indirect Diffuse
     half3 ao_diffuse = AOMultiBounce(diffuseColor, ao);
-    half3 radianceSH = SampleSH(N);
-    // float3 radianceSH = IrradianceSH_2Bands(N); // TODO
-    half3 IndirectDiffuse = ao_diffuse * radianceSH * diffuseColor;
+    half diffuse = Diffuse_Lambert(diffuseColor) * ao_diffuse;
+    #if defined(_SUBSURFACE_COLOR)
+        diffuse *= saturate((NoV + 0.5) / 2.25);
+    #endif
+    
+    half3 IndirectDiffuse = SampleSH(N) * diffuse;
+
+    #if defined(_SUBSURFACE_COLOR)
+    IndirectDiffuse *= saturate(subsurfaceColor + NoV);
+    #endif
 
     #if defined(_SH_OFF) // debug
         IndirectDiffuse = half3(0.0, 0.0, 0.0);
@@ -173,12 +182,8 @@ half3 CalIndirectLighting(
     // IBL
     half3 R = reflect(-V, N);
 
-    #if defined(_SAMPLE_dfgLUT)
-    half3  SpecDFG =  EnvBRDF(F0_specularColor, perceptualRoughness, NoV, dfg);   // dfg方案一:采样生成的dfgLUT
-    #else
-    half3  SpecDFG =  EnvBRDFApprox(F0_specularColor, perceptualRoughness, NoV, dfg);  // dfg方案二:拟合
-    enegyCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
-    #endif
+    // 布料没有F项,在dfg_lut的第三通道中存储了布料的dg项
+    half3 SpecDFG = EnvBRDF(F0_specularColor, perceptualRoughness, NoV, dg_cloth);
     
     half3 SpecLD  = IndirectSpecularLD(R, positionWS, perceptualRoughness, ao);
     half  SpecularOcclusion = GetSpecularOcclusion(NoV, Pow2(perceptualRoughness), ao);

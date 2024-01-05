@@ -13,8 +13,6 @@ Shader "CustomPBR/PBRCloth"
         _SheenColorMap ("SheenColorMap", 2D)              = "white" {}
         _SheenColor    ("SheenColor",     Color)          = (0.04, 0.04, 0.04, 0.04)
         
-        _SubsurfaceColor ("SubsurfaceColor", Color)       = (1, 1, 1, 1)
-        
         _SpecularMap ("Specular Map",2D)                  = "white" {} // F0 = 0.08 * _Specular * _SpecularMap
         _Specular    ("Specular", Range(0.0, 1.0))        = 0.5
         
@@ -252,16 +250,16 @@ Shader "CustomPBR/PBRCloth"
 
                 half2 dfg = 0.0;
                 half  eneryCompensation = 1.0;
-
-                #if defined(_SAMPLE_dfgLUT)
+                
                 half  dfg_NdotV = saturate(dot(normalWS, view_dir));
-                dfg = SAMPLE_TEXTURE2D_LOD(_dfgLUT,sampler_dfgLUT,float2(dfg_NdotV, perceptualRoughness),0.0).rg;
+                half3 dfgLUT = SAMPLE_TEXTURE2D_LOD(_dfgLUT,sampler_dfgLUT,float2(dfg_NdotV, perceptualRoughness),0.0).rgb;
+                dfg = dfgLUT.rg;
+                half  dg_cloth = dfgLUT.b;
                 eneryCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
-                #endif
 
                 // 光照计算:环境光
                 half3 IndirectLighting = CalIndirectLighting(diffuseColor, F0_specularColor, perceptualRoughness, positionWS,
-                    normalWS, view_dir, ao, eneryCompensation, dfg);
+                    normalWS, view_dir, ao, eneryCompensation, dfg, dg_cloth, subsurfaceColor);
                 
                 // 光照计算:直接光
                 half3 DirectLigthing = CalDirectLighting(diffuseColor, F0_specularColor, roughness, positionWS, normalWS,
