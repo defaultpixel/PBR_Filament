@@ -4,14 +4,15 @@ Shader "CustomPBR/PBRStandard"
     {
         [MainTexture] _BaseMap  ("Albedo", 2D)            = "white" {}
         [MainColor]   _BaseColor("Color", Color)          = (1,1,1,1)
+        
+        _SpecularMap ("Specular Map",2D)                  = "white" {} // F0 = 0.08 * _Specular * _SpecularMap
+        _Specular    ("Specular", Range(0.0, 1.0))        = 0.5
                
         _MetallicMap ("Metallic Map",2D)                  = "white" {}
         _Metallic    ("Metallic",Range(0.0,1.0))          = 1.0
                
         _RoughnessMap("Roughness Map",2D)                 = "white" {}
         _PerceptualRoughness("Roughness",Range(0.0,1.0))  = 1.0
-         
-        _Specular ("Specular", Range(0.0, 1.0))           = 0.5
                
         _NormalMap   ("Normal Map",2D)                    = "bump" {}
         _NormalScale ("Normal", Range(0.0, 1.0))          = 1.0
@@ -101,6 +102,7 @@ Shader "CustomPBR/PBRStandard"
             TEXTURE2D(_NormalMap);       SAMPLER(sampler_NormalMap);
             TEXTURE2D(_AOMap);           SAMPLER(sampler_AOMap);
             TEXTURE2D(_dfgLUT);          SAMPLER(sampler_dfgLUT);
+            TEXTURE2D(_SpecularMap);     SAMPLER(sampler_SpecularMap);
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
@@ -177,6 +179,8 @@ Shader "CustomPBR/PBRStandard"
                 // 贴图采样
                 half4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
                 half3 baseColor = baseMap.rgb;
+                
+                half  specular = SAMPLE_TEXTURE2D(_SpecularMap, sampler_SpecularMap, uv) * _Specular;
 
                 float metallic  = saturate(SAMPLE_TEXTURE2D(_MetallicMap, sampler_MetallicMap, uv).r * _Metallic);
                 float perceptualRoughness =
@@ -195,7 +199,7 @@ Shader "CustomPBR/PBRStandard"
 
                 // float roughness = Pow2(perceptualRoughness); // Filament
 
-                half3 F0 = float3(0.08,0.08,0.08) * _Specular;
+                half3 F0 = float3(0.08,0.08,0.08) * specular;
 
                 half3 diffuseColor  = lerp(baseColor, float3(0.0, 0.0, 0.0), metallic);
                 half3 F0_specularColor = lerp(F0, baseColor, metallic);

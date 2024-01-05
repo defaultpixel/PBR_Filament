@@ -4,7 +4,7 @@
 #include "Assets/Common/ShaderLibrary/BRDF.hlsl"
 
 // 直接光清漆层
-// 1. 如果清漆没有自己的法线贴图,使用模型几何法线 ?TODO:使用模型发现贴图效果更好
+// 1. 如果清漆没有自己的法线贴图,使用模型几何法线 ?TODO: 使用模型的法线贴图或许效果更好?
 // 2. V项替换为更节省的V_Kelemen
 half3 ClearCoatFrc(
     half clearCoat,
@@ -47,9 +47,9 @@ half3 ClearCoatDFG(
     half NoV = saturate(dot(N_mesh, V));
 
     #if defined(_SAMPLE_dfgLUT)
-    half3  SpecDFG =  EnvBRDF(F0_specularColor, clearCoatPerceptualRoughness, NoV, dfg);   // dfg方案一:采样生成的dfgLUT
+    half3  SpecDFG =  EnvBRDF(0.04, clearCoatPerceptualRoughness, NoV, dfg);   // dfg方案一:采样生成的dfgLUT
     #else
-    half3  SpecDFG =  EnvBRDFApprox(F0_specularColor, clearCoatPerceptualRoughness, NoV);  // dfg方案二:拟合
+    half3  SpecDFG =  EnvBRDFApprox(0.04, clearCoatPerceptualRoughness, NoV);  // dfg方案二:拟合
     #endif
     
     half3 SpecLD  = IndirectSpecularLD(R, positionWS, clearCoatPerceptualRoughness, ao);
@@ -102,7 +102,7 @@ half3 CustomBRDF(
     // Filament
     half  D = D_GGX_Filament(roughness, NoH, N, H);
     float Vis = V_SmithGGXCorrelatedFast(NoV, NoL, roughness);
-    half3 F = F_Schlick_Filament(VoH, F0_specularColor);
+    half F = F_Schlick_Filament(0.04, 1.0, VoH);
 
     half3 Fr = (D * Vis) * F;
     
@@ -119,15 +119,14 @@ half3 CustomBRDF(
     #if defined(_SPECULAR_OFF) //debug
         Fr = half3(0,0,0);
     #endif
-    
-    
-    // test
-    // return F * Radiance;
 
 
     // 考虑清漆带来的基层能量损失
     half3 DirectLighting = Radiance * ((Fd + Fr * (1.0 - Fc)) * (1.0 - Fc) + Frc);
-    // DirectLighting = Radiance * (Fd + Fr);
+
+    #if defined(_DirectClearCoat_OFF)
+        DirectLighting = Radiance * (Fd + Fr);
+    #endif
 
     return DirectLighting;
 }
@@ -256,13 +255,24 @@ half3 CalIndirectLighting(
     half3 IndirecSpec_clearCoat = ClearCoatDFG(F0_specularColor,clearCoat,clearCoatPerceptualRoughness,
         V,N,positionWS,ao,Fc) * SpecularAO;
 
+    half3 IndirectLighting;
+    #if defined(_IndirectClearCoat_OFF)
+    {
+        Fc = 0.0h;
+        
+        IndirectLighting = IndirectDiffuse + IndirectSpec;
+        return IndirectLighting;
+    }
+    #endif
+
     // 基础层衰减的能量
     IndirectDiffuse *= (1.0 - Fc);
-    IndirectSpec    *= (1.0 - Fc) * (1.0 - Fc);
+    // IndirectSpec    *= (1.0 - Fc) * (1.0 - Fc);
+    // IndirectSpec    *= sqrt(1.0 - Fc);
     IndirectSpec    += IndirecSpec_clearCoat * Fc;
 
-    float3 IndirectLighting = IndirectDiffuse + IndirectSpec;
-
+    IndirectLighting = IndirectDiffuse + IndirectSpec;
+    
     return IndirectLighting;
 }
 

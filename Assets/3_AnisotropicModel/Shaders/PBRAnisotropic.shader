@@ -224,7 +224,7 @@ Shader "CustomPBR/PBRAnisotropic"
 
                 // 光照计算:环境光
                 half3 IndirectLighting = CalIndirectLighting(diffuseColor, F0_specularColor, perceptualRoughness, positionWS,
-                    normalWS, view_dir, ao, eneryCompensation, dfg);
+                    normalWS, tangentWS, binormalWS, view_dir, ao, eneryCompensation, dfg, anisotropy);
                 
                 // 光照计算:直接光
                 half3 DirectLigthing = CalDirectLighting(diffuseColor, F0_specularColor, roughness, positionWS, normalWS,

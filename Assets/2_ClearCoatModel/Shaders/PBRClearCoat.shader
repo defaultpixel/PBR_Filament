@@ -34,6 +34,10 @@ Shader "CustomPBR/PBRClearCoat"
         [Toggle(_ECompen_DEBUG)] _ECompen_DEBUG     ("_ECompen_DEBUG",  Float) = 0.0
         
         [Toggle(_SAMPLE_dfgLUT)] _SAMPLE_dfgLUT     ("_SAMPLE_dfgLUT",  Float) = 0.0
+        
+        [Toggle(_ChangeF0)] _ChangeF0 ("_ChangeF0", Float) = 0.0
+        [Toggle(_DirectClearCoat_OFF)]  _DirectClearCoat_OFF ("_DirectClearCoat_OFF",  Float) = 0.0
+        [Toggle(_IndirectClearCoat_OFF)]  _IndirectClearCoat_OFF ("_IndirectClearCoat_OFF",  Float) = 0.0
     }
     
     SubShader
@@ -70,6 +74,10 @@ Shader "CustomPBR/PBRClearCoat"
             #pragma shader_feature_local_fragment _IBL_OFF
             #pragma shader_feature_local_fragment _ECompen_DEBUG
             #pragma shader_feature_local_fragment _ECompen_OFF
+            
+            #pragma shader_feature_local_fragment _ChangeF0
+            #pragma shader_feature_local_fragment _IndirectClearCoat_OFF
+            #pragma shader_feature_local_fragment _DirectClearCoat_OFF
             
             #pragma shader_feature_local_fragment _SAMPLE_dfgLUT
             
@@ -188,7 +196,7 @@ Shader "CustomPBR/PBRClearCoat"
                 float metallic  = saturate(SAMPLE_TEXTURE2D(_MetallicMap, sampler_MetallicMap, uv).r * _Metallic);
                 float perceptualRoughness =
                     SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, uv).r * _PerceptualRoughness;
-                perceptualRoughness = Remap01To(perceptualRoughness,  0.089, 1);
+                perceptualRoughness = lerp(0.089, 1, perceptualRoughness);
                 
                 half3 normalTS  = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv), _NormalScale);
                 normalWS = normalize(mul(normalTS, TBN));
@@ -205,7 +213,7 @@ Shader "CustomPBR/PBRClearCoat"
                 // float roughness = Pow2(perceptualRoughness); // Filament
 
                 half clearCoat = _ClearCoat; // clear coat strength
-                half clearCoatPerceptualRoughness = Remap01To(_ClearCoatRoughness, 0.089, 0.6);
+                half clearCoatPerceptualRoughness = lerp(0.089, 0.6, _ClearCoatRoughness);
                 half clearCoatRoughness = clearCoatPerceptualRoughness * clearCoatPerceptualRoughness;
 
                 half3 F0 = float3(0.08,0.08,0.08) * _Specular;
@@ -213,7 +221,17 @@ Shader "CustomPBR/PBRClearCoat"
                 half3 diffuseColor  = lerp(baseColor, float3(0.0, 0.0, 0.0), metallic);
                 half3 F0_specularColor = lerp(F0, baseColor, metallic);
 
-                F0_specularColor = F0BaseClearCoat(F0_specularColor); // 基层需要基于透明涂层-材质界面来重新计算 f0
+                // half3 IOR_clearCoat_base = (1 + sqrt(F0_specularColor)) / (1 - sqrt(F0_specularColor));
+                // F0_specularColor = Pow2((IOR_clearCoat_base - 1.5) / (IOR_clearCoat_base + 1.5));
+
+                // 基层需要基于透明涂层-材质界面来重新计算 f0
+                // ? TODO:UE5 清漆着色器 不改变材质 F0
+                #if defined(_ChangeF0)
+                {
+                    F0_specularColor = lerp(F0BaseClearCoat(F0_specularColor), F0_specularColor, metallic);
+                }
+                #endif
+                
                 // TODO : 根据透明图层的IOR来修改基层的perceptualRoughness
 
                 // SSAO

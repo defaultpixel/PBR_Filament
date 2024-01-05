@@ -147,10 +147,13 @@ half3 CalIndirectLighting(
     half  perceptualRoughness,
     half3 positionWS,
     half3 N,
+    half3 T,
+    half3 B,
     half3 V,
     half  ao,
     inout half enegyCompensation,
-    half2  dfg
+    half2  dfg,
+    half  anisotropy
 )
 {
     half NoV = abs(dot(N, V)) + 1e-5;
@@ -166,7 +169,15 @@ half3 CalIndirectLighting(
     #endif
 
     // IBL
-    half3 R = reflect(-V, N);
+
+    // 弯曲反射向量
+    half3 anisotropicDirection = anisotropy >= 0.0 ? B : T;
+    half3 anisotropicTangent = cross(anisotropicDirection, V);
+    half3 anisotropicNormal  = cross(anisotropicTangent, anisotropicDirection);
+    half3 bentNormal         = normalize(lerp(N, anisotropicNormal, anisotropy));
+    half3 R = reflect(-V, bentNormal);
+    
+    // half3 R = reflect(-V, N);
 
     #if defined(_SAMPLE_dfgLUT)
     half3  SpecDFG =  EnvBRDF(F0_specularColor, perceptualRoughness, NoV, dfg);   // dfg方案一:采样生成的dfgLUT

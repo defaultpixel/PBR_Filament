@@ -50,12 +50,15 @@ Material:
     m_Ints: []
     m_Floats:
     - _AOStrength: 1
+    - _ChangeF0: 0
     - _ClearCoat: 1
     - _ClearCoatRoughness: 1
     - _DIFFUSE_OFF: 0
+    - _DirectClearCoat_OFF: 0
     - _ECompen_DEBUG: 0
     - _ECompen_OFF: 0
     - _IBL_OFF: 0
+    - _IndirectClearCoat_OFF: 0
     - _Metallic: 1
     - _NormalScale: 1
     - _PerceptualRoughness: 0.09

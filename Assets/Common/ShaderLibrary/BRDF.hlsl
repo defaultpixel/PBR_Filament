@@ -113,6 +113,8 @@ half3 EnvBRDFApprox( half3 SpecularColor, half Roughness, half NoV)
 // ----- Filament -----
 // roughness = a = perceptualRoughness * perceptualRoughness
 
+
+
 #define MEDIUMP_FLT_MAX    65504.0
 #define saturateMediump(x) min(x, MEDIUMP_FLT_MAX)
 
@@ -138,6 +140,27 @@ half D_GGX_Anisotropic(half NoH, const half3 h,
     half v2 = dot(v, v);
     half w2 = a2 / v2;
     return a2 * w2 * w2 * (1.0 / PI);
+}
+
+// Ashikhmin天鹅绒NDF
+// Ashikhmin 2007, "Distribution-based BRDFs"
+half D_Ashikhmin_Filament(half roughness, half NoH)
+{
+    half a2 = roughness * roughness;
+    half cos2h = NoH * NoH;
+    half sin2h = max(1.0 - cos2h, 0.0078125); // 2^(-14/2), so sin2h^2 > 0 in fp16
+    half sin4h = sin2h * sin2h;
+    half cot2 = -cos2h / (a2 * sin2h);
+    return 1.0 / (PI * (4.0 * a2 + 1.0) * sin4h) * (4.0 * exp(cot2) + sin4h);
+}
+
+// Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF"
+half D_Charlie_Filament(half roughness, half NoH)
+{
+    half invAlpha  = 1.0 / roughness;
+    half cos2h = NoH * NoH;
+    half sin2h = max(1.0 - cos2h, 0.0078125); // 2^(-14/2), so sin2h^2 > 0 in fp16
+    return (2.0 + invAlpha) * pow(sin2h, invAlpha * 0.5) / (2.0 * PI);
 }
 
 float V_SmithGGXCorrelated(half NoV, half NoL, half roughness)
@@ -172,10 +195,30 @@ half V_SmithGGXCorrelated_Anisotropic(half at, half ab, half ToV, half BoV,
     return saturateMediump(v);
 }
 
+// Neubelt and Pettineo 2013, "Crafting a Next-gen Material Pipeline for The Order: 1886"
+float V_Neubelt_Filament(float NoV, float NoL)
+{
+    return saturateMediump(1.0 / (4.0 * (NoL + NoV - NoL * NoV)));
+}
+
 half3 F_Schlick_Filament(half u, half3 f0)
 {
     half f = pow(1.0 - u, 5.0);
     return f + f0 * (1.0 - f);
+}
+
+half F_Schlick_Filament(half f0, half f90, half VoH)
+{
+    return f0 + (f90 - f0) * Pow5(1.0 - VoH);
+}
+
+// Burley 2012, "Physically-Based Shading at Disney"
+half Fd_Burley_Filament(half roughness, half NoV, half NoL, half LoH)
+{
+    half f90 = 0.5 + 2.0 * roughness * LoH * LoH;
+    half lightScatter = F_Schlick_Filament(1.0, f90, NoL);
+    half viewScatter  = F_Schlick_Filament(1.0, f90, NoV);
+    return lightScatter * viewScatter * (1.0 / PI);
 }
 
 

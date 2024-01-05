@@ -11,9 +11,7 @@ Material:
   m_Shader: {fileID: 4800000, guid: a597c290c1b5df6488bef1e71c2d6924, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _IBL_OFF
-  - _SH_OFF
+  m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -30,7 +28,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 9317b1d17752f864d8607b2d1240c474, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicMap:
@@ -52,18 +50,18 @@ Material:
     m_Ints: []
     m_Floats:
     - _AOStrength: 1
-    - _Anisotropy: 1
+    - _Anisotropy: 0.92
     - _DIFFUSE_OFF: 0
     - _ECompen_DEBUG: 0
     - _ECompen_OFF: 0
-    - _IBL_OFF: 1
-    - _Metallic: 1
+    - _IBL_OFF: 0
+    - _Metallic: 0
     - _NormalScale: 1
-    - _PerceptualRoughness: 0.005
+    - _PerceptualRoughness: 1
     - _SAMPLE_dfgLUT: 0
-    - _SH_OFF: 1
+    - _SH_OFF: 0
     - _SPECULAR_OFF: 0
     - _Specular: 0.5
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.6226415, g: 0.12041651, b: 0.12041651, a: 1}
   m_BuildTextureStacks: []
