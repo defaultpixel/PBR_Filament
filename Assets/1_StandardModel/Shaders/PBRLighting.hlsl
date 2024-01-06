@@ -13,7 +13,7 @@ half3 CustomBRDF(
     half3 L,
     half3 lightColor,
     half  shadow,
-    half  enegyCompensation
+    half3  energyCompensation
 )
 {
     half3 H = normalize(L + V);
@@ -50,8 +50,9 @@ half3 CustomBRDF(
     
     // 能量补偿
     #if defined(_ECompen_OFF)
+    energyCompensation = 1.0h;
     #else
-        Fr *= enegyCompensation;
+        Fr *= energyCompensation;
     #endif
 
     #if defined(_SPECULAR_OFF) //debug
@@ -74,7 +75,7 @@ half3 CalDirectLighting(
     half3 positionWS,
     half3 N,
     half3 V,
-    half  enegyCompensation
+    half3  energyCompensation
 )
 {
     #if defined(_MAIN_LIGHT_SHADOWS_SCREEN) && !defined(_SURFACE_TYPE_TRANSPARENT)
@@ -96,7 +97,7 @@ half3 CalDirectLighting(
 
         DirectLighting_MainLight =
             CustomBRDF(
-                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,enegyCompensation);
+                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,energyCompensation);
     }
 
     // AddLights
@@ -114,7 +115,7 @@ half3 CalDirectLighting(
 
         DirectLighting_AddLight +=
             CustomBRDF(
-                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,enegyCompensation);
+                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,energyCompensation);
     }
     
     #endif
@@ -133,7 +134,7 @@ half3 CalIndirectLighting(
     half3 N,
     half3 V,
     half  ao,
-    inout half enegyCompensation,
+    inout half3 energyCompensation,
     half2  dfg
 )
 {
@@ -156,7 +157,7 @@ half3 CalIndirectLighting(
     half3  SpecDFG =  EnvBRDF(F0_specularColor, perceptualRoughness, NoV, dfg);   // dfg方案一:采样生成的dfgLUT
     #else
     half3  SpecDFG =  EnvBRDFApprox(F0_specularColor, perceptualRoughness, NoV, dfg);  // dfg方案二:拟合
-    enegyCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
+    energyCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
     #endif
     
     half3 SpecLD  = IndirectSpecularLD(R, positionWS, perceptualRoughness, ao);
@@ -167,9 +168,9 @@ half3 CalIndirectLighting(
 
     // 能量补偿
     #if defined(_ECompen_OFF)
-        enegyCompensation = 1.0h;
+        energyCompensation = 1.0h;
     #else
-        IndirectSpec *= enegyCompensation;
+        IndirectSpec *= energyCompensation;
     #endif
 
     #if defined(_IBL_OFF) // debug

@@ -43,6 +43,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 2c168cfa764d75a4388497592b10b93c, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _SpecularMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _dfgLUT:
         m_Texture: {fileID: 2800000, guid: 669018f7b7ae0d742926c89aff1a001d, type: 3}
         m_Scale: {x: 1, y: 1}

@@ -214,7 +214,7 @@ Shader "CustomPBR/PBRAnisotropic"
                 // Test
 
                 half2 dfg = 0.0;
-                half  eneryCompensation = 1.0;
+                half3  energyCompensation = 1.0;
 
                 #if defined(_SAMPLE_dfgLUT)
                 half  dfg_NdotV = saturate(dot(normalWS, view_dir));
@@ -224,17 +224,17 @@ Shader "CustomPBR/PBRAnisotropic"
 
                 // 光照计算:环境光
                 half3 IndirectLighting = CalIndirectLighting(diffuseColor, F0_specularColor, perceptualRoughness, positionWS,
-                    normalWS, tangentWS, binormalWS, view_dir, ao, eneryCompensation, dfg, anisotropy);
+                    normalWS, tangentWS, binormalWS, view_dir, ao, energyCompensation, dfg, anisotropy);
                 
                 // 光照计算:直接光
                 half3 DirectLigthing = CalDirectLighting(diffuseColor, F0_specularColor, roughness, positionWS, normalWS,
-                    tangentWS, binormalWS, view_dir, eneryCompensation, anisotropy);
+                    tangentWS, binormalWS, view_dir, energyCompensation, anisotropy);
 
 
                 half3 finalColor = DirectLigthing + IndirectLighting;
 
                 #if defined (_ECompen_DEBUG) // debug
-                    return half4((eneryCompensation - 1.0).xxx, 1.0);
+                    return half4((energyCompensation - 1.0).xyz, 1.0);
                 #endif
                 
                 return half4(finalColor, 1.0);

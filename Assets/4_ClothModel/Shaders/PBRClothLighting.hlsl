@@ -13,7 +13,7 @@ half3 CustomBRDF(
     half3 L,
     half3 lightColor,
     half  shadow,
-    half  enegyCompensation,
+    half3  energyCompensation,
     half3 sheenColor,
     half3 subsurfaceColor
 )
@@ -91,7 +91,7 @@ half3 CalDirectLighting(
     half3 positionWS,
     half3 N,
     half3 V,
-    half  enegyCompensation,
+    half3  energyCompensation,
     half3 sheenColor,
     half3 subsurfaceColor
 )
@@ -115,7 +115,7 @@ half3 CalDirectLighting(
 
         DirectLighting_MainLight =
             CustomBRDF(
-                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,enegyCompensation,
+                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,energyCompensation,
                 sheenColor,subsurfaceColor);
     }
 
@@ -134,7 +134,7 @@ half3 CalDirectLighting(
 
         DirectLighting_AddLight +=
             CustomBRDF(
-                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,enegyCompensation,
+                diffuseColor,F0_specularColor,roughness,N,V,L,lightColor,shadow,energyCompensation,
                 sheenColor,subsurfaceColor);
     }
     
@@ -154,7 +154,7 @@ half3 CalIndirectLighting(
     half3 N,
     half3 V,
     half  ao,
-    inout half enegyCompensation,
+    inout half3 energyCompensation,
     half2 dfg,
     half  dg_cloth,
     half3 subsurfaceColor
@@ -193,9 +193,9 @@ half3 CalIndirectLighting(
 
     // 能量补偿
     #if defined(_ECompen_OFF)
-        enegyCompensation = 1.0h;
+        energyCompensation = 1.0h;
     #else
-        IndirectSpec *= enegyCompensation;
+        IndirectSpec *= energyCompensation;
     #endif
 
     #if defined(_IBL_OFF) // debug

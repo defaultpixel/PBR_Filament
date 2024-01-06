@@ -69,7 +69,7 @@ half3 CustomBRDF(
     half3 L,
     half3 lightColor,
     half  shadow,
-    half  enegyCompensation,
+    half3  energyCompensation,
     half  clearCoat,
     half  clearCoatRoughness
 )
@@ -108,8 +108,9 @@ half3 CustomBRDF(
     
     // 能量补偿
     #if defined(_ECompen_OFF)
+    energyCompensation = 1.0h;
     #else
-        Fr *= enegyCompensation;
+        Fr *= energyCompensation;
     #endif
 
     // 清漆BRDF
@@ -140,7 +141,7 @@ half3 CalDirectLighting(
     half3 N,
     half3 N_mesh,
     half3 V,
-    half  enegyCompensation,
+    half3  energyCompensation,
     half  clearCoat,
     half  clearCoatRoughness
 )
@@ -164,7 +165,7 @@ half3 CalDirectLighting(
 
         DirectLighting_MainLight =
             CustomBRDF(
-                diffuseColor,F0_specularColor,roughness,N,N_mesh,V,L,lightColor,shadow,enegyCompensation,
+                diffuseColor,F0_specularColor,roughness,N,N_mesh,V,L,lightColor,shadow,energyCompensation,
                 clearCoat, clearCoatRoughness);
     }
 
@@ -183,7 +184,7 @@ half3 CalDirectLighting(
 
         DirectLighting_AddLight +=
             CustomBRDF(
-                diffuseColor,F0_specularColor,roughness,N,N_mesh,V,L,lightColor,shadow,enegyCompensation,
+                diffuseColor,F0_specularColor,roughness,N,N_mesh,V,L,lightColor,shadow,energyCompensation,
                 clearCoat, clearCoatRoughness);
     }
     
@@ -204,7 +205,7 @@ half3 CalIndirectLighting(
     half3 N_mesh,
     half3 V,
     half  ao,
-    inout half enegyCompensation,
+    inout half3 energyCompensation,
     half2  dfg,
     half  clearCoat,
     half  clearCoatPerceptualRoughness
@@ -229,7 +230,7 @@ half3 CalIndirectLighting(
     half3  SpecDFG =  EnvBRDF(F0_specularColor, perceptualRoughness, NoV, dfg);   // dfg方案一:采样生成的dfgLUT
     #else
     half3  SpecDFG =  EnvBRDFApprox(F0_specularColor, perceptualRoughness, NoV, dfg);  // dfg方案二:拟合
-    enegyCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
+    energyCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
     #endif
     
     half3 SpecLD  = IndirectSpecularLD(R, positionWS, perceptualRoughness, ao);
@@ -241,9 +242,9 @@ half3 CalIndirectLighting(
 
     // 能量补偿
     #if defined(_ECompen_OFF)
-        enegyCompensation = 1.0h;
+        energyCompensation = 1.0h;
     #else
-        IndirectSpec *= enegyCompensation;
+        IndirectSpec *= energyCompensation;
     #endif
 
     #if defined(_IBL_OFF) // debug
@@ -267,8 +268,7 @@ half3 CalIndirectLighting(
 
     // 基础层衰减的能量
     IndirectDiffuse *= (1.0 - Fc);
-    // IndirectSpec    *= (1.0 - Fc) * (1.0 - Fc);
-    IndirectSpec    *= sqrt(1.0 - Fc);
+    IndirectSpec    *= (1.0 - Fc);
     IndirectSpec    += IndirecSpec_clearCoat * Fc;
 
     IndirectLighting = IndirectDiffuse + IndirectSpec;

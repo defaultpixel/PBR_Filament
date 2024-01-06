@@ -1,5 +1,6 @@
 Shader "CustomPBR/PBRClearCoat"
 {
+    // 对于非金属,不明显的涂层效果,可以通过修改基层的 roughness,reflectance 来类似实现,不一定要用 ClearCoat
     Properties
     {
         [MainTexture] _BaseMap  ("Albedo", 2D)            = "white" {}
@@ -11,7 +12,7 @@ Shader "CustomPBR/PBRClearCoat"
         _RoughnessMap("Roughness Map",2D)                 = "white" {}
         _PerceptualRoughness("Roughness",Range(0.0,1.0))  = 1.0
          
-        _Specular ("Specular", Range(0.0, 1.0))           = 0.5
+        _Specular ("Specular", Range(0.0, 1.0))           = 0.5 // Reflectance(0 - 1 => 0% 到 8%(红宝石), 钻石可到16%)
                
         _NormalMap   ("Normal Map",2D)                    = "bump" {}
         _NormalScale ("Normal", Range(0.0, 1.0))          = 1.0
@@ -205,6 +206,7 @@ Shader "CustomPBR/PBRClearCoat"
 
                 half clearCoat = _ClearCoat; // clear coat strength
                 half clearCoatPerceptualRoughness = lerp(0.089, 0.6, _ClearCoatRoughness);
+                // half clearCoatPerceptualRoughness = lerp(0.089, 1.0, _ClearCoatRoughness);
                 half clearCoatRoughness = clearCoatPerceptualRoughness * clearCoatPerceptualRoughness;
 
                 // 清漆粗糙度大于基层粗糙度时,基层粗糙度按清漆强度插值到清漆粗糙度
@@ -245,8 +247,8 @@ Shader "CustomPBR/PBRClearCoat"
                 #endif
 
                 // Test
-                half2 dfg = 0.0;
-                half  eneryCompensation = 1.0;
+                half2  dfg = 0.0;
+                half3  energyCompensation = 1.0;
 
                 #if defined(_SAMPLE_dfgLUT)
                 half  dfg_NdotV = saturate(dot(normalWS, view_dir));
@@ -256,17 +258,17 @@ Shader "CustomPBR/PBRClearCoat"
 
                 // 光照计算:环境光
                 half3 IndirectLighting = CalIndirectLighting(diffuseColor, F0_specularColor, perceptualRoughness, positionWS,
-                    normalWS, normalWS_mesh, view_dir, ao, eneryCompensation, dfg, clearCoat, clearCoatPerceptualRoughness);
+                    normalWS, normalWS_mesh, view_dir, ao, energyCompensation, dfg, clearCoat, clearCoatPerceptualRoughness);
                 
                 // 光照计算:直接光
                 half3 DirectLigthing = CalDirectLighting(diffuseColor, F0_specularColor, roughness, positionWS, normalWS,
-                    normalWS_mesh, view_dir, eneryCompensation, clearCoat, clearCoatRoughness);
+                    normalWS_mesh, view_dir, energyCompensation, clearCoat, clearCoatRoughness);
 
 
                 half3 finalColor = DirectLigthing + IndirectLighting;
 
                 #if defined (_ECompen_DEBUG) // debug
-                    return half4((eneryCompensation - 1.0).xxx, 1.0);
+                    return half4((energyCompensation - 1.0).xyz, 1.0);
                 #endif
                 
                 return half4(finalColor, 1.0);

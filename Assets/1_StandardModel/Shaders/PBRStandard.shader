@@ -212,27 +212,27 @@ Shader "CustomPBR/PBRStandard"
                 // Test
 
                 half2 dfg = 0.0;
-                half  eneryCompensation = 1.0;
+                half3  energyCompensation = 1.0;
 
                 #if defined(_SAMPLE_dfgLUT)
                 half  dfg_NdotV = saturate(dot(normalWS, view_dir));
                 dfg = SAMPLE_TEXTURE2D_LOD(_dfgLUT,sampler_dfgLUT,float2(dfg_NdotV, perceptualRoughness),0.0).rg;
-                eneryCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
+                energyCompensation = 1.0 + F0_specularColor * (rcp(dfg.x + dfg.y) - 1.0);
                 #endif
 
                 // 光照计算:环境光
                 half3 IndirectLighting = CalIndirectLighting(diffuseColor, F0_specularColor, perceptualRoughness, positionWS,
-                    normalWS, view_dir, ao, eneryCompensation, dfg);
+                    normalWS, view_dir, ao, energyCompensation, dfg);
                 
                 // 光照计算:直接光
                 half3 DirectLigthing = CalDirectLighting(diffuseColor, F0_specularColor, roughness, positionWS, normalWS,
-                    view_dir, eneryCompensation);
+                    view_dir, energyCompensation);
 
 
                 half3 finalColor = DirectLigthing + IndirectLighting;
 
                 #if defined (_ECompen_DEBUG) // debug
-                    return half4((eneryCompensation - 1.0).xxx, 1.0);
+                    return half4((energyCompensation - 1.0).xyz, 1.0);
                 #endif
                 
                 return half4(finalColor, 1.0);
