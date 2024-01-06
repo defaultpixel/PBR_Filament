@@ -114,7 +114,7 @@ half3 CustomBRDF(
 
     // 清漆BRDF
     half Fc = 1.0h; // 清漆BRDF F项,基层能量损失
-    half Frc = ClearCoatFrc(clearCoat, clearCoatRoughness, N, L, V, Fc);
+    half Frc = ClearCoatFrc(clearCoat, clearCoatRoughness, N_mesh, L, V, Fc);
     
     #if defined(_SPECULAR_OFF) //debug
         Fr = half3(0,0,0);
@@ -253,7 +253,7 @@ half3 CalIndirectLighting(
     // 清漆高光波瓣计算
     half Fc = 0.0h;
     half3 IndirecSpec_clearCoat = ClearCoatDFG(F0_specularColor,clearCoat,clearCoatPerceptualRoughness,
-        V,N,positionWS,ao,Fc) * SpecularAO;
+        V,N_mesh,positionWS,ao,Fc) * SpecularAO;
 
     half3 IndirectLighting;
     #if defined(_IndirectClearCoat_OFF)
@@ -268,7 +268,7 @@ half3 CalIndirectLighting(
     // 基础层衰减的能量
     IndirectDiffuse *= (1.0 - Fc);
     // IndirectSpec    *= (1.0 - Fc) * (1.0 - Fc);
-    // IndirectSpec    *= sqrt(1.0 - Fc);
+    IndirectSpec    *= sqrt(1.0 - Fc);
     IndirectSpec    += IndirecSpec_clearCoat * Fc;
 
     IndirectLighting = IndirectDiffuse + IndirectSpec;

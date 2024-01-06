@@ -122,7 +122,7 @@ half D_GGX_Filament(half roughness, half NoH, const half3 n, const half3 h)
 {
     half3 NxH = cross(n, h);
     half a = NoH * roughness;
-    half k = roughness / (dot(NxH, NxH) + a * a);
+    half k = roughness / (dot(NxH, NxH) + a * a); // 移动端half : dot(NxH,NxH) 代替 1.0 - NoH * NoH
     half d = k * k * (1.0 / PI);
     return saturateMediump(d);
 }

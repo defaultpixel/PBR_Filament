@@ -771,8 +771,8 @@ PlayerSettings:
   apiCompatibilityLevelPerPlatform: {}
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: PBR_Filament
-  metroPackageVersion: 
+  metroPackageName: PBRFilament
+  metroPackageVersion: 1.0.0.0
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
@@ -780,7 +780,7 @@ PlayerSettings:
   metroCertificateNotAfter: 0000000000000000
   metroApplicationDescription: PBR_Filament
   wsaImages: {}
-  metroTileShortName: 
+  metroTileShortName: PBR_Filament
   metroTileShowName: 0
   metroMediumTileShowName: 0
   metroLargeTileShowName: 0
