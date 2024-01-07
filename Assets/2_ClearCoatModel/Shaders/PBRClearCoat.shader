@@ -205,8 +205,8 @@ Shader "CustomPBR/PBRClearCoat"
                 ao = lerp(1.0, ao, _AOStrength);
 
                 half clearCoat = _ClearCoat; // clear coat strength
-                half clearCoatPerceptualRoughness = lerp(0.089, 0.6, _ClearCoatRoughness);
-                // half clearCoatPerceptualRoughness = lerp(0.089, 1.0, _ClearCoatRoughness);
+                // half clearCoatPerceptualRoughness = lerp(0.089, 0.6, _ClearCoatRoughness);
+                half clearCoatPerceptualRoughness = lerp(0.089, 1.0, _ClearCoatRoughness);
                 half clearCoatRoughness = clearCoatPerceptualRoughness * clearCoatPerceptualRoughness;
 
                 // 清漆粗糙度大于基层粗糙度时,基层粗糙度按清漆强度插值到清漆粗糙度

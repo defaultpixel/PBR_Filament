@@ -233,8 +233,10 @@ Shader "CustomPBR/PBRCloth"
                 // 布料参数
                 #if defined(_Velvet)
                 {
-                    sheenColor = SAMPLE_TEXTURE2D(_SheenColorMap, sampler_SheenColorMap, uv).rgb;
-                    diffuseColor  = _BaseColor;
+                    // sheenColor = SAMPLE_TEXTURE2D(_SheenColorMap, sampler_SheenColorMap, uv).rgb;
+                    // diffuseColor  = _BaseColor;
+                    sheenColor = _SheenColor;
+                    diffuseColor  = baseColor;
                 }
                 #else
                 {
